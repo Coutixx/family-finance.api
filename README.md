@@ -1,110 +1,50 @@
-### **Entidades principais**
+# Family Finance API
 
-1. **User** – quem registra os dados (opcional se for só 1 família)
-
-    - Id (GUID)
-
-    - Name
-
-    - Email
-
-    - PasswordHash
-
-2. **Family** – grupo de pessoas para controle financeiro
-
-    - Id (GUID)
-
-    - Name
-
-3. **Member** – pessoas dentro da família
-
-    - Id (GUID)
-
-    - Name
-
-    - FamilyId (FK)
-
-4. **Transaction** – registro de ganho ou gasto
-
-    - Id (GUID)
-
-    - MemberId (FK)
-
-    - FamilyId (FK)
-
-    - Type (Enum: Income | Expense)
-
-    - Category (Enum ou string: Alimentação, Transporte, etc.)
-
-    - Amount (decimal)
-
-    - Date (DateTime)
-
-    - Description (string opcional)
-
-5. **Budget** – limite de gastos por categoria/mês
-
-    - Id (GUID)
-
-    - FamilyId (FK)
-
-    - Category
-
-    - LimitAmount (decimal)
-
-    - Month (int)
-
-    - Year (int)
-
+🚀 **Family Finance API** é uma API RESTful desenvolvida em **.NET 10**, voltada para gerenciamento financeiro familiar. Permite controle de famílias, membros, categorias, orçamentos e transações, com banco de dados **PostgreSQL**.
 
 ---
 
-### **Endpoints básicos**
+## Funcionalidades
 
-#### **Family**
-
-- `GET /families` → listar famílias
-
-- `POST /families` → criar família
-
-- `GET /families/{id}` → detalhes da família
-
-
-#### **Member**
-
-- `GET /families/{id}/members` → listar membros
-
-- `POST /families/{id}/members` → criar membro
-
-
-#### **Transaction**
-
-- `GET /families/{id}/transactions` → listar todos os gastos/ganhos
-
-- `POST /families/{id}/transactions` → registrar transação
-
-- `GET /families/{id}/transactions/{month}/{year}` → extrato mensal
-
-- `GET /families/{id}/transactions/summary` → resumo total: ganhos, gastos, saldo
-
-
-#### **Budget**
-
-- `GET /families/{id}/budgets` → listar orçamentos
-
-- `POST /families/{id}/budgets` → criar/atualizar orçamento
-
-- `GET /families/{id}/budgets/alert` → ver categorias que estouraram o limite
-
+- CRUD de famílias e membros
+- CRUD de categorias e orçamentos
+- Registro de transações financeiras
+- Estrutura preparada para múltiplos ambientes (Local/Docker)
 
 ---
 
-### **Observações rápidas**
+## Tecnologias
 
-- Transactions podem ser filtradas por membro, categoria e data.
+- **.NET 10 (C#)**
+- **Entity Framework Core**
+- **PostgreSQL**
+- **Docker & Docker Compose**
 
-- Resumo financeiro = soma de incomes – soma de expenses.
+---
 
-- Para alertas de orçamento, compare o total de expenses da categoria com o limite definido.
+## Estrutura do Projeto
 
-- Use autenticação JWT se for multiusuário.
+FamilyFinance.Api/
+│
+├─ Controllers/ # Endpoints da API
+├─ Data/ # DbContext e configurações do banco
+├─ Migrations/ # Migrations do EF Core
+├─ Models/ # Modelos de domínio
+├─ Services/ # Lógica de negócio
+├─ appsettings.json # Configuração genérica (subida no GitHub)
+├─ appsettings.Development.json (não subir) # Config local com senha
+├─ docker-compose.yml # Orquestração de containers
+└─ README.md
+
+markdown
+Copiar código
+
+---
+
+## Endpoints
+
+- `/api/families` → CRUD de famílias
+- `/api/members` → CRUD de membros
+- `/api/categories` → CRUD de categorias
+- `/api/budgets` → CRUD de orçamentos
+- `/api/transactions` → Registro e consulta de transações

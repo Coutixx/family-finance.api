@@ -1,22 +1,22 @@
-# Build outputs
+# Build folders
 bin/
 obj/
 
-# User-specific Visual Studio files
+# Visual Studio / Rider / IDE
 *.user
 *.suo
-*.vs
+*.vscode/
+*.idea/
 
-# VS Code settings
-.vscode/
-
-# OS files
-.DS_Store
+# OS
+*.DS_Store
 Thumbs.db
 
-# Dotnet temp/log files
-*.log
+# Environment variables
+.env
 
-# Docker local overrides / envs
-docker-compose.override.yml
-*.env.local
+# Local development settings
+appsettings.Development.json
+
+# Logs
+*.Logs
