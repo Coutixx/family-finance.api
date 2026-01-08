@@ -60,7 +60,8 @@ docker-compose up --build
 
 ## 🗺️ Roadmap
 
+- [x] Versionamento da API
 - [ ] Autenticação e autorização (JWT)
 - [ ] Testes unitários e de integração
-- [ ] Versionamento da API
 - [ ] Pipeline CI/CD
+
