@@ -30,7 +30,6 @@ FamilyFinance.Api/
 ├─ Data/                     # DbContext e configurações do banco
 ├─ Migrations/               # Histórico de migrations do EF Core
 ├─ Models/                   # Modelos de domínio
-├─ Services/                 # Lógica de negócio
 ├─ appsettings.json          # Configuração genérica
 ├─ appsettings.Development.json # Configuração local
 ├─ docker-compose.yml        # Orquestração de containers
