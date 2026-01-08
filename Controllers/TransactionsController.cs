@@ -1,12 +1,12 @@
-using FamilyFinance.Api.Models;
 using FamilyFinance.Api.Data;
+using FamilyFinance.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace FamilyFinance.Api.Controllers;
 
 [ApiController]
-[Route("families/{id}/transactions")]
+[Route("families/{familyId}/transactions")]
 public class TransactionsController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -17,22 +17,25 @@ public class TransactionsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Transaction>>> TransactionsList(Guid id)
+    public async Task<ActionResult<IEnumerable<Transaction>>> TransactionsList(Guid familyId)
     {
-        var transactions = await _context.Transactions.Where(t => t.FamilyId == id).OrderByDescending(t => t.Date).ToListAsync();
+        var transactions = await _context.Transactions
+            .Where(t => t.FamilyId == familyId)
+            .Include(t => t.Category)
+            .Include(t => t.Member)
+            .ToListAsync();
 
         return Ok(transactions);
     }
 
     [HttpPost]
-    public async Task<IActionResult> TransactionsRegister(Guid id, [FromBody] Transaction transaction)
+    public async Task<IActionResult> TransactionCreate(Guid familyId, Transaction transaction)
     {
-        transaction.Id = Guid.NewGuid();
-        transaction.FamilyId = id;
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        transaction.Member = null;
-        transaction.Family = null;
-        transaction.Category = null;
+        transaction.Id = Guid.NewGuid();
+        transaction.FamilyId = familyId;
 
         _context.Transactions.Add(transaction);
         await _context.SaveChangesAsync();
@@ -41,32 +44,39 @@ public class TransactionsController : ControllerBase
     }
 
     [HttpGet("{month:int}/{year:int}")]
-    public async Task<ActionResult<IEnumerable<Transaction>>> GetByMonth(Guid id, int month, int year)
+    public async Task<ActionResult<IEnumerable<Transaction>>> MonthlyStatement(
+        Guid familyId,
+        int month,
+        int year)
     {
-        return await _context.Transactions
-            .Where(t => t.FamilyId == id && t.Date.Month == month && t.Date.Year == year)
-            .OrderByDescending(t => t.Date)
+        var transactions = await _context.Transactions
+            .Where(t =>
+                t.FamilyId == familyId &&
+                t.Date.Month == month &&
+                t.Date.Year == year)
+            .Include(t => t.Category)
+            .Include(t => t.Member)
             .ToListAsync();
+
+        return Ok(transactions);
     }
 
     [HttpGet("summary")]
-    public async Task<IActionResult> GetSummary(Guid id)
+    public async Task<IActionResult> Summary(Guid familyId)
     {
-        var transactions = await _context.Transactions
-            .Where(t => t.FamilyId == id)
-            .ToListAsync();
+        var income = await _context.Transactions
+            .Where(t => t.FamilyId == familyId && t.Type == TransactionType.Income)
+            .SumAsync(t => t.Amount);
 
-        // Lógica de cálculo usando o Enum TransactionType
-        var totalIncome = transactions.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount);
-        var totalExpense = transactions.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount);
-        var balance = totalIncome - totalExpense;
+        var expense = await _context.Transactions
+            .Where(t => t.FamilyId == familyId && t.Type == TransactionType.Expense)
+            .SumAsync(t => t.Amount);
 
         return Ok(new
         {
-            TotalIncome = totalIncome,
-            TotalExpense = totalExpense,
-            Balance = balance
+            income,
+            expense,
+            balance = income - expense
         });
-
     }
 }

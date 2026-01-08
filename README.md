@@ -37,14 +37,12 @@ FamilyFinance.Api/
 └─ README.md
 
 markdown
-Copiar código
 
 ---
 
 ## Endpoints
 
 - `/api/families` → CRUD de famílias
-- `/api/members` → CRUD de membros
 - `/api/categories` → CRUD de categorias
 - `/api/budgets` → CRUD de orçamentos
 - `/api/transactions` → Registro e consulta de transações
