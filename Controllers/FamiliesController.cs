@@ -1,7 +1,6 @@
-using FamilyFinance.Api.Data;
-using FamilyFinance.Api.Models;
+using FamilyFinance.Api.Core.Interfaces;
+using FamilyFinance.Api.Core.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace FamilyFinance.Api.Controllers;
 
@@ -9,63 +8,41 @@ namespace FamilyFinance.Api.Controllers;
 [Route("families")]
 public class FamiliesController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IFamilyService _familyService;
 
-    public FamiliesController(AppDbContext context)
+    public FamiliesController(IFamilyService familyService)
     {
-        _context = context;
+        _familyService = familyService;
     }
 
+    // GET /families
+    // Retorna todas as famílias
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Family>>> FamiliesList()
+    public async Task<ActionResult<IEnumerable<Family>>> GetFamilies()
     {
-        var families = await _context.Families.ToListAsync();
-
+        var families = await _familyService.GetAllFamiliesAsync();
         return Ok(families);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> FamilyCreate(Family family)
-    {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        family.Id = Guid.NewGuid();
-        _context.Families.Add(family);
-        await _context.SaveChangesAsync();
-
-        return Ok(family);
-    }
-
+    // GET /families/{id}
+    // Retorna uma família específica pelo ID
     [HttpGet("{id}")]
-    public async Task<ActionResult<Family>> FamilyDetails(Guid id)
+    public async Task<ActionResult<Family>> GetFamilyById(Guid id)
     {
-        var family = await _context.Families.FindAsync(id);
-
+        var family = await _familyService.GetFamilyByIdAsync(id);
         if (family == null) return NotFound("Família não encontrada");
 
         return Ok(family);
     }
 
-    [HttpGet("{id}/members")]
-    public async Task<ActionResult<IEnumerable<Member>>> MembersList(Guid id)
-    {
-        var members = await _context.Members.Where(m => m.FamilyId == id).ToListAsync();
-
-        return Ok(members);
-    }
-
-    [HttpPost("{id}/members")]
-    public async Task<IActionResult> MemberCreate(Guid id, Member member)
+    // POST /families
+    // Cria uma nova família
+    [HttpPost]
+    public async Task<IActionResult> CreateFamily(Family family)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        member.Id = Guid.NewGuid();
-        member.FamilyId = id;
-
-        _context.Members.Add(member);
-        await _context.SaveChangesAsync();
-
-        return Ok(member);
+        var createdFamily = await _familyService.CreateFamilyAsync(family);
+        return CreatedAtAction(nameof(GetFamilyById), new { id = createdFamily.Id }, createdFamily);
     }
-
 }

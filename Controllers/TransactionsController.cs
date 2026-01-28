@@ -1,7 +1,6 @@
-using FamilyFinance.Api.Data;
-using FamilyFinance.Api.Models;
+using FamilyFinance.Api.Core.Models;
+using FamilyFinance.Api.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace FamilyFinance.Api.Controllers;
 
@@ -9,74 +8,49 @@ namespace FamilyFinance.Api.Controllers;
 [Route("families/{familyId}/transactions")]
 public class TransactionsController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly ITransactionService _transactionService;
 
-    public TransactionsController(AppDbContext context)
+    public TransactionsController(ITransactionService transactionService)
     {
-        _context = context;
+        _transactionService = transactionService;
     }
 
+    // GET /families/{familyId}/transactions
+    // Retorna todas as transações de uma família
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Transaction>>> TransactionsList(Guid familyId)
+    public async Task<ActionResult<IEnumerable<Transaction>>> GetTransactions(Guid familyId)
     {
-        var transactions = await _context.Transactions
-            .Where(t => t.FamilyId == familyId)
-            .Include(t => t.Category)
-            .Include(t => t.Member)
-            .ToListAsync();
-
+        var transactions = await _transactionService.GetTransactionsByFamilyAsync(familyId);
         return Ok(transactions);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> TransactionCreate(Guid familyId, Transaction transaction)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        transaction.Id = Guid.NewGuid();
-        transaction.FamilyId = familyId;
-
-        _context.Transactions.Add(transaction);
-        await _context.SaveChangesAsync();
-
-        return Ok(transaction);
-    }
-
+    // GET /families/{familyId}/transactions/{month}/{year}
+    // Retorna todas as transações de um mês/ano específico
     [HttpGet("{month:int}/{year:int}")]
-    public async Task<ActionResult<IEnumerable<Transaction>>> MonthlyStatement(
-        Guid familyId,
-        int month,
-        int year)
+    public async Task<ActionResult<IEnumerable<Transaction>>> GetMonthlyStatement(
+        Guid familyId, int month, int year)
     {
-        var transactions = await _context.Transactions
-            .Where(t =>
-                t.FamilyId == familyId &&
-                t.Date.Month == month &&
-                t.Date.Year == year)
-            .Include(t => t.Category)
-            .Include(t => t.Member)
-            .ToListAsync();
-
+        var transactions = await _transactionService.GetMonthlyTransactionsAsync(familyId, month, year);
         return Ok(transactions);
     }
 
+    // GET /families/{familyId}/transactions/summary
+    // Retorna o resumo financeiro da família: income, expense e balance
     [HttpGet("summary")]
-    public async Task<IActionResult> Summary(Guid familyId)
+    public async Task<IActionResult> GetSummary(Guid familyId)
     {
-        var income = await _context.Transactions
-            .Where(t => t.FamilyId == familyId && t.Type == TransactionType.Income)
-            .SumAsync(t => t.Amount);
+        var summary = await _transactionService.GetSummaryAsync(familyId);
+        return Ok(summary);
+    }
 
-        var expense = await _context.Transactions
-            .Where(t => t.FamilyId == familyId && t.Type == TransactionType.Expense)
-            .SumAsync(t => t.Amount);
+    // POST /families/{familyId}/transactions
+    // Cria uma nova transação para a família
+    [HttpPost]
+    public async Task<IActionResult> CreateTransaction(Guid familyId, Transaction transaction)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        return Ok(new
-        {
-            income,
-            expense,
-            balance = income - expense
-        });
+        var createdTransaction = await _transactionService.CreateTransactionAsync(familyId, transaction);
+        return CreatedAtAction(nameof(GetTransactions), new { familyId }, createdTransaction);
     }
 }
